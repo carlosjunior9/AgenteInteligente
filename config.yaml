@@ -1,0 +1,57 @@
+# Configuración global del Agente Inteligente de Lengua de Señas.
+# Las rutas son relativas a la carpeta del proyecto.
+
+camara:
+  indice: 0              # 0 = cámara por defecto
+  ancho: 640
+  alto: 480
+  fps_objetivo: 20
+
+deteccion:                # Agente 1: detector de manos (MediaPipe Tasks)
+  modelo_ruta: modelos/hand_landmarker.task
+  modelo_url: https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
+  max_manos: 2
+  confianza_deteccion: 0.6
+  confianza_presencia: 0.5
+  confianza_seguimiento: 0.5
+
+normalizacion:            # Agente 2: normalizador
+  rotar: true             # alinear el vector muñeca→base del dedo medio con el eje Y
+
+clasificador:             # Agente 3: MLP (entropía cruzada + softmax)
+  modelo_ruta: modelos/modelo_estatico.pkl
+  capas_ocultas: [128, 64]
+  max_iter: 800
+  umbral_confianza: 0.75  # por debajo de esto → "no reconocido"
+  copias_aumento: 4       # copias con ruido para compensar pocas muestras
+  ruido_aumento: 0.01
+
+suavizado:                # suavizado temporal del clasificador
+  metodo: ema             # ema | ventana
+  alpha: 0.3              # filtro exponencial
+  ventana: 5              # tamaño de la ventana deslizante
+
+aprendizaje:              # Agente de aprendizaje
+  muestras_por_captura: 30
+  eta: 0.2                # tasa de la repetición espaciada
+  umbral_dominada: 0.9
+  umbral_practica: 0.8    # confianza mínima para contar un acierto
+  frames_practica: 15     # frames consecutivos para aprobar una práctica
+  max_frames_practica: 300
+  lambda_decaimiento: 0.05  # decaimiento por día sin practicar
+  guardar_imagenes: true  # guarda también una miniatura de cada captura
+
+voz:                      # Agente de voz
+  activa: true
+  motor: auto             # auto | pyttsx3 (offline) | gtts (requiere internet)
+  velocidad: 160
+  idioma: es
+  umbral_habla: 0.8       # confianza mínima para hablar automáticamente
+
+rutas:                    # carpetas de datos (relativas al proyecto)
+  capturas: datos_aprendizaje/capturas_usuario
+  feedback: datos_aprendizaje/feedback/feedback_log.csv
+  historial: datos_aprendizaje/historial_entrenamiento.csv
+  progreso: datos_aprendizaje/progreso_usuario.json
+  reentrenados: datos_aprendizaje/modelos_reentrenados
+  etiquetas_base: datasets/etiquetas.csv
